@@ -3,7 +3,7 @@
 
 graph ERD {
     graph [
-        bgcolor="#faf9f7",
+        bgcolor="white",
         pad=0.6,
         overlap=false,
         splines=true,
