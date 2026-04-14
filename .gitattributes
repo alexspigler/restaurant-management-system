@@ -1,2 +1,3 @@
-# Exclude the bundled PostgreSQL JDBC driver from GitHub language stats
-gui/lib/*.jar linguist-vendored
+# Tell Linguist to count hand-written .sql files in language stats
+# (by default generic SQL is classified as "data" and excluded)
+*.sql linguist-detectable=true
