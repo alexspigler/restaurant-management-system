@@ -1,0 +1,179 @@
+// Restaurant Management Database System — Entity-Relationship Diagram (Chen notation)
+// Render:  fdp -Tpng erd.dot -o erd.png
+
+graph ERD {
+    graph [
+        bgcolor="#faf9f7",
+        pad=0.6,
+        overlap=false,
+        splines=true,
+        layout=fdp,
+        sep="+12",
+        K=0.9
+    ];
+
+    node [fontname="Helvetica", style=filled];
+    edge [color="#4a4a4a", penwidth=1.0];
+
+    // ═══ ENTITIES (filled green rectangles) ═══
+    node [shape=rectangle, fillcolor="#2c4a2e", color="#2c4a2e", fontcolor=white, fontsize=13, width=1.3, height=0.55, margin="0.2,0.1"];
+
+    Area;
+    Customer;
+    MenuItem;
+    DineInTable;
+    DeliveryBoy;
+    Orders;
+    Delivery;
+    Payment;
+    Reservation;
+    UserAccount;
+
+    // Weak entity — double rectangle
+    OrderItem [peripheries=2];
+
+    // ═══ RELATIONSHIPS (tan diamonds) ═══
+    node [shape=diamond, fillcolor="#d9bf8a", color="#2c4a2e", fontcolor=black, fontsize=10, width=1.1, height=0.7, margin="0.1,0.05", peripheries=1];
+
+    R_Customer_Area        [label="LocatedIn"];
+    R_DeliveryBoy_Area     [label="Serves"];
+    R_Customer_Orders      [label="Places"];
+    R_OrderItem_MenuItem   [label="References"];
+    R_Delivery_Orders      [label="For"];
+    R_Delivery_DeliveryBoy [label="AssignedTo"];
+    R_Payment_Orders       [label="PaysFor"];
+    R_Reservation_Customer [label="MadeBy"];
+    R_Reservation_Table    [label="Reserves"];
+
+    // Identifying relationship (double diamond) for weak entity
+    R_OrderItem_Orders [label="IsPartOf", peripheries=2];
+
+    // ═══ ATTRIBUTES (white ellipses with green border) ═══
+    node [shape=ellipse, fillcolor=white, color="#2c4a2e", fontcolor=black, fontsize=9, width=0.7, height=0.4, margin="0.08,0.04", peripheries=1];
+
+    // --- Area ---
+    Area_AreaCode [label=<<U>AreaCode</U>>];
+    Area_AreaName [label="AreaName"];
+    Area_City     [label="City"];
+
+    // --- Customer ---
+    Cust_ID        [label=<<U>CustomerID</U>>];
+    Cust_First     [label="FirstName"];
+    Cust_Last      [label="LastName"];
+    Cust_Phone     [label="Phone"];
+    Cust_Email     [label="Email"];
+    Cust_Street    [label="Street"];
+    Cust_Join      [label="JoinDate"];
+    Cust_Premium   [label="IsPremium"];
+
+    // --- MenuItem ---
+    Menu_ID       [label=<<U>ItemID</U>>];
+    Menu_Name     [label="ItemName"];
+    Menu_Cat      [label="Category"];
+    Menu_Desc     [label="Description"];
+    Menu_Price    [label="Price"];
+    Menu_Avail    [label="IsAvailable"];
+
+    // --- DineInTable ---
+    Table_ID    [label=<<U>TableID</U>>];
+    Table_Cap   [label="Capacity"];
+    Table_Loc   [label="Location"];
+
+    // --- DeliveryBoy ---
+    DB_ID    [label=<<U>DeliveryBoyID</U>>];
+    DB_Name  [label="Name"];
+    DB_Phone [label="Phone"];
+
+    // --- Orders ---
+    Ord_ID     [label=<<U>OrderID</U>>];
+    Ord_Date   [label="OrderDate"];
+    Ord_Type   [label="OrderType"];
+    Ord_Total  [label="TotalAmount"];
+    Ord_Disc   [label="Discount"];
+
+    // --- OrderItem (weak; ItemID is partial key shown with dashed-style underline) ---
+    OI_ItemID    [label=<<FONT><I><U>ItemID</U></I></FONT>>];
+    OI_Qty       [label="Quantity"];
+    OI_UnitPrice [label="UnitPrice"];
+
+    // --- Delivery ---
+    Del_ID     [label=<<U>DeliveryID</U>>];
+    Del_Time   [label="DeliveryTime"];
+    Del_Status [label="Status"];
+
+    // --- Payment ---
+    Pay_ID     [label=<<U>PaymentID</U>>];
+    Pay_Amount [label="Amount"];
+    Pay_Method [label="PaymentMethod"];
+    Pay_Date   [label="PaymentDate"];
+
+    // --- Reservation ---
+    Res_ID       [label=<<U>ReservationID</U>>];
+    Res_Date     [label="ReservationDate"];
+    Res_Time     [label="ReservationTime"];
+    Res_Guests   [label="NumGuests"];
+    Res_Status   [label="Status"];
+
+    // --- UserAccount ---
+    UA_ID       [label=<<U>UserID</U>>];
+    UA_Username [label="Username"];
+    UA_Password [label="Password"];
+    UA_Role     [label="Role"];
+
+    // ═══ ATTRIBUTE EDGES ═══
+    Area -- {Area_AreaCode, Area_AreaName, Area_City};
+    Customer -- {Cust_ID, Cust_First, Cust_Last, Cust_Phone, Cust_Email, Cust_Street, Cust_Join, Cust_Premium};
+    MenuItem -- {Menu_ID, Menu_Name, Menu_Cat, Menu_Desc, Menu_Price, Menu_Avail};
+    DineInTable -- {Table_ID, Table_Cap, Table_Loc};
+    DeliveryBoy -- {DB_ID, DB_Name, DB_Phone};
+    Orders -- {Ord_ID, Ord_Date, Ord_Type, Ord_Total, Ord_Disc};
+    OrderItem -- {OI_ItemID, OI_Qty, OI_UnitPrice};
+    Delivery -- {Del_ID, Del_Time, Del_Status};
+    Payment -- {Pay_ID, Pay_Amount, Pay_Method, Pay_Date};
+    Reservation -- {Res_ID, Res_Date, Res_Time, Res_Guests, Res_Status};
+    UserAccount -- {UA_ID, UA_Username, UA_Password, UA_Role};
+
+    // ═══ RELATIONSHIP EDGES ═══
+    // Thick line = total participation; arrow = cardinality direction.
+    // Edges are split so each side of a relationship can carry its own attributes.
+
+    // Customer --LocatedIn-- Area
+    Customer -- R_Customer_Area [penwidth=2.5, dir=forward, arrowhead=vee];
+    Area     -- R_Customer_Area;
+
+    // DeliveryBoy --Serves-- Area
+    DeliveryBoy -- R_DeliveryBoy_Area;
+    Area        -- R_DeliveryBoy_Area [dir=forward, arrowhead=vee];
+
+    // Customer --Places-- Orders
+    Customer -- R_Customer_Orders;
+    Orders   -- R_Customer_Orders [penwidth=2.5, dir=forward, arrowhead=vee];
+
+    // OrderItem --IsPartOf-- Orders
+    OrderItem -- R_OrderItem_Orders [penwidth=2.5, dir=forward, arrowhead=vee];
+    Orders    -- R_OrderItem_Orders;
+
+    // OrderItem --References-- MenuItem
+    OrderItem -- R_OrderItem_MenuItem [penwidth=2.5, dir=forward, arrowhead=vee];
+    MenuItem  -- R_OrderItem_MenuItem;
+
+    // Delivery --For-- Orders
+    Delivery -- R_Delivery_Orders [penwidth=2.5, dir=forward, arrowhead=vee];
+    Orders   -- R_Delivery_Orders [dir=forward, arrowhead=vee];
+
+    // Delivery --AssignedTo-- DeliveryBoy
+    Delivery    -- R_Delivery_DeliveryBoy [penwidth=2.5, dir=forward, arrowhead=vee];
+    DeliveryBoy -- R_Delivery_DeliveryBoy [penwidth=2.5, dir=forward, arrowhead=vee];
+
+    // Payment --PaysFor-- Orders
+    Payment -- R_Payment_Orders [penwidth=2.5, dir=forward, arrowhead=vee];
+    Orders  -- R_Payment_Orders;
+
+    // Reservation --MadeBy-- Customer
+    Reservation -- R_Reservation_Customer [penwidth=2.5, dir=forward, arrowhead=vee];
+    Customer    -- R_Reservation_Customer;
+
+    // Reservation --Reserves-- DineInTable
+    Reservation -- R_Reservation_Table [penwidth=2.5, dir=forward, arrowhead=vee];
+    DineInTable -- R_Reservation_Table;
+}
