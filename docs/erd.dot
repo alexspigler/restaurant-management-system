@@ -9,7 +9,8 @@ graph ERD {
         splines=true,
         layout=fdp,
         sep="+12",
-        K=0.9
+        K=0.9,
+        ratio="0.6"
     ];
 
     node [fontname="Helvetica", style=filled];
@@ -176,4 +177,12 @@ graph ERD {
     // Reservation --Reserves-- DineInTable
     Reservation -- R_Reservation_Table [penwidth=2.5, dir=forward, arrowhead=vee];
     DineInTable -- R_Reservation_Table;
+
+    // Invisible tether to position UserAccount beside the main cluster
+    // instead of letting fdp float it above by default
+    UserAccount -- Customer [style=invis, weight=0.3, len=2];
+
+    // Invisible tether to pull MenuItem near OrderItem,
+    // avoiding a crossing between OrderItem→References and Delivery→For
+    MenuItem -- OrderItem [style=invis, weight=5];
 }
