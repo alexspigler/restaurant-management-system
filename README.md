@@ -18,7 +18,7 @@ A full-stack restaurant management application backed by a normalized PostgreSQL
   - Block delivery creation for Dine-In orders
   - Auto-promote customers to *premium* status once lifetime spend reaches $200
   - Block deletion of customers with existing orders
-- **Java Swing GUI** with role-based login, case-insensitive keyword search (`ILIKE`), CRUD for Customers and Menu Items, and live MAX/MIN/AVG analytics over the Orders and MenuItem tables
+- **Java Swing GUI** with login authentication, case-insensitive keyword search (`ILIKE`), CRUD for Customers and Menu Items, and live MAX/MIN/AVG analytics over the Orders and MenuItem tables
 
 ## Entity-Relationship Diagram
 

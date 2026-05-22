@@ -33,7 +33,7 @@ The system is built around ten business entities plus a separate table for GUI a
 | **Delivery** | Delivery record for online/phone orders |
 | **Payment** | Payment transactions, one per order |
 | **Reservation** | Dine-in table reservations with date, time, and party size |
-| **UserAccount** | Role-based login for the Swing application |
+| **UserAccount** | Login accounts for the Swing application (stores a role per user) |
 
 Key design decisions:
 
@@ -107,7 +107,7 @@ LEFT JOIN Orders O ON C.CustomerID = O.CustomerID
 GROUP BY C.CustomerID, C.FirstName, C.LastName, C.IsPremium;
 ```
 
-This is what the GUI's aggregate queries run against — e.g., `SELECT MAX(TotalSpent), MIN(TotalSpent), AVG(TotalSpent) FROM CustomerOrderSummary`.
+Customer-level aggregates such as `MAX`/`MIN`/`AVG` of `TotalSpent` become one-liners on top of this view. (The GUI's own stats buttons aggregate the base `Orders` and `MenuItem` tables directly, not this view.)
 
 ![CustomerOrderSummary](screenshots/views/customer-order-summary.png)
 
@@ -127,7 +127,7 @@ JOIN OrderItem OI ON O.OrderID = OI.OrderID
 JOIN MenuItem  M  ON OI.ItemID  = M.ItemID;
 ```
 
-Simplifies item-level sales reporting and the GUI's keyword search.
+Simplifies item-level sales reporting.
 
 ![OrderDetails](screenshots/views/order-details.png)
 
@@ -284,7 +284,7 @@ All SQL access is routed through [`DatabaseHelper`](../gui/src/DatabaseHelper.ja
 
 ### Login
 
-Authenticates against the `UserAccount` table. Three roles: Admin, Staff, Manager.
+Authenticates against the `UserAccount` table by username and password. Each account carries a role (Admin, Staff, Manager), though the GUI does not yet gate features by role — any valid login gets full access.
 
 ```sql
 SELECT 1 FROM UserAccount WHERE Username = ? AND Password = ?;
