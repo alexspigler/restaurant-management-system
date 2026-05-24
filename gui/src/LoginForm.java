@@ -69,7 +69,6 @@ public class LoginForm extends JFrame {
                 JOptionPane.showMessageDialog(this,
                     "Invalid username or password. Please try again.",
                     "Login Failed", JOptionPane.ERROR_MESSAGE);
-                //https://learn.microsoft.com/en-us/dotnet/api/android.views.view.requestfocus?view=net-android-35.0
                 txtPassword.setText("");
                 txtUsername.requestFocus();
             }

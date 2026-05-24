@@ -104,7 +104,6 @@ public class RestaurantForm extends JFrame {
         gbc.gridx = 5; inputPanel.add(txtCustSearch,     gbc);
         gbc.gridx = 6; inputPanel.add(btnSearch,         gbc);
         gbc.gridx = 7; inputPanel.add(btnClearSearch,    gbc);
-        //from build table () code 
         tblCustomers = new JTable();
         tblCustomers.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tblCustomers.getSelectionModel().addListSelectionListener(e -> {
@@ -177,7 +176,6 @@ public class RestaurantForm extends JFrame {
         }
     }
 
-    //exact code from the onUpdate
     private void onUpdateCustomer() {
         if (selectedCustomerID == -1) {
             JOptionPane.showMessageDialog(this, "Select a customer first.",
@@ -201,7 +199,7 @@ public class RestaurantForm extends JFrame {
             showError("Error updating customer: " + ex.getMessage());
         }
     }
-//exact same code from ondelete()
+
     private void onDeleteCustomer() {
         if (selectedCustomerID == -1) {
             JOptionPane.showMessageDialog(this, "Select a customer first.",

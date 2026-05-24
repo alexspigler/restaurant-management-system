@@ -89,6 +89,8 @@ java  -cp "out:lib/postgresql-42.7.10.jar" RestaurantApp
 | staff1   | pass456  | Staff   |
 | manager  | mgr789   | Manager |
 
+> **Note:** This is a demo project — credentials are stored and checked as plaintext for simplicity. Production systems should store only salted password hashes (e.g. bcrypt) and never log or display them.
+
 ## Screenshots
 
 **Customer management tab — browse, search, add, update, delete**
