@@ -28,27 +28,29 @@ FOR EACH ROW
 EXECUTE FUNCTION fn_prevent_dinein_delivery();
 
 -- =============================================
--- Trigger 2 (UPDATE): Auto-Update Premium Status
--- Promotes customer to premium when total spending >= $200.
+-- Trigger 2 (INSERT/UPDATE): Auto-Update Premium Status
+-- Promotes a customer to premium once their cumulative spend reaches $200.
+-- Fires on both INSERT and UPDATE so a new order that crosses the threshold
+-- promotes immediately, and re-checks only the affected customer (NEW).
 -- =============================================
 CREATE OR REPLACE FUNCTION fn_update_premium_status()
 RETURNS TRIGGER AS $$
 BEGIN
     UPDATE Customer
     SET IsPremium = 'Yes'
-    WHERE CustomerID IN (
-        SELECT O.CustomerID
-        FROM Orders O
-        GROUP BY O.CustomerID
-        HAVING SUM(O.TotalAmount) >= 200
-    )
-    AND IsPremium = 'No';
+    WHERE CustomerID = NEW.CustomerID
+      AND IsPremium = 'No'
+      AND (
+          SELECT SUM(O.TotalAmount)
+          FROM Orders O
+          WHERE O.CustomerID = NEW.CustomerID
+      ) >= 200;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_UpdatePremiumStatus
-AFTER UPDATE ON Orders
+AFTER INSERT OR UPDATE ON Orders
 FOR EACH ROW
 EXECUTE FUNCTION fn_update_premium_status();
 

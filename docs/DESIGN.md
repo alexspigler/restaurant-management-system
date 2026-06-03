@@ -41,6 +41,9 @@ Key design decisions:
 - **OrderItem as a weak entity.** Orders and menu items have a many-to-many relationship, so `OrderItem` resolves it with a composite primary key `(OrderID, ItemID)` plus `Quantity` and `UnitPrice` attributes. Deletion of an order cascades to its line items so no orphans can exist.
 - **`UnitPrice` as a historical snapshot.** `OrderItem.UnitPrice` is captured at order time, not looked up from `MenuItem.Price`. When the restaurant raises a price, historical orders preserve what the customer was actually charged.
 - **Participation constraints.** Every order must belong to a registered customer, every payment must belong to an order, and every delivery must be assigned to a delivery driver — enforced by `NOT NULL` foreign keys.
+- **`Orders` is named in the plural** to avoid colliding with the SQL reserved word `ORDER` (as in `ORDER BY`), which is invalid as a bare table name in most engines.
+- **`UserAccount` is an application-layer table.** It exists only to authenticate the Swing client (storing a role per user) and has no foreign-key relationships to the operational entities — it is intentionally outside the restaurant business domain.
+- **`MenuItem.Category` uses cuisine types** (`American`, `Asian`, `Mexican`, `Italian`, `Beverage`) rather than a coarse food/beverage split, enabling category-level filtering, per-cuisine reporting, and keyword search.
 
 ### ERD
 
@@ -76,14 +79,33 @@ UserAccount(UserID PK, Username UNIQUE, Password, Role)
 
 The full DDL with all foreign keys, `NOT NULL`, and `CHECK` constraints lives in [`sql/schema.sql`](../sql/schema.sql).
 
-### Normalization
+### Normalization (BCNF)
 
-All eleven tables are in **BCNF**. Each table has a clear primary key that determines every non-key attribute, and no table contains a non-trivial functional dependency whose left-hand side is not a superkey. A few cases are worth calling out:
+All eleven tables are in **BCNF**: for every non-trivial functional dependency `X -> Y`, the left-hand side `X` is a superkey. FDs are derived from the application semantics, not just the current data. The per-table analysis follows.
 
-- **DeliveryBoy has two candidate keys** — `{DeliveryBoyID}` and `{AreaCode}` (due to the one-to-one relationship with Area). Both functional dependencies are on superkeys, so BCNF holds.
-- **OrderItem has a composite candidate key** `{OrderID, ItemID}`. One could ask whether `ItemID -> UnitPrice` holds, since `UnitPrice` often matches the menu item's current price — it does not. `UnitPrice` is a historical snapshot, so the same `ItemID` can legally carry different `UnitPrice` values across orders.
-- **Orders stores `TotalAmount` as a denormalized aggregate** — it could be derived from `SUM(Quantity * UnitPrice) - Discount` across its line items. This is a deliberate trade-off: storing the total avoids recomputing it on every read, at the cost of having to keep it consistent at the application layer.
-- **Reservation has an alternate candidate key** `{TableID, ReservationDate, ReservationTime}` — a single table cannot be double-booked at the same time.
+**Area** — `AreaCode -> AreaName, City`. Candidate key `{AreaCode}`.
+
+**Customer** — `CustomerID -> {all other attributes}`. Candidate key `{CustomerID}`. (`Email` is `UNIQUE` but nullable, so it is not treated as a candidate key.) A suspected transitive `AreaCode -> City` does not arise: Customer stores only `AreaCode` (a foreign key), and `City` lives solely in Area, so the dependency is correctly isolated.
+
+**MenuItem** — `ItemID -> ItemName, Category, Description, Price, IsAvailable`. Candidate key `{ItemID}`.
+
+**DineInTable** — `TableID -> Capacity, Location`. Candidate key `{TableID}`.
+
+**DeliveryBoy** — `DeliveryBoyID -> Name, Phone, AreaCode` and `AreaCode -> DeliveryBoyID, Name, Phone`. Two candidate keys, `{DeliveryBoyID}` and `{AreaCode}` (the `UNIQUE` on `AreaCode` enforces the one-to-one with Area). Both left-hand sides are superkeys.
+
+**Orders** — `OrderID -> CustomerID, OrderDate, OrderType, TotalAmount, Discount`. Candidate key `{OrderID}`. Note that `CustomerID -> Discount` does **not** hold (the same customer's orders can carry different discounts). `TotalAmount` is a stored aggregate that could be derived from `SUM(Quantity * UnitPrice) - Discount`; the FD `OrderID -> TotalAmount` still has a superkey on the left, so BCNF is not violated — keeping it consistent is an application-layer integrity concern, not a normalization one.
+
+**OrderItem** — `{OrderID, ItemID} -> Quantity, UnitPrice`. Candidate key `{OrderID, ItemID}` (composite). `ItemID -> UnitPrice` does **not** hold: `UnitPrice` is a snapshot at order time, so the same item can carry different unit prices across orders. No BCNF violation.
+
+**Delivery** — `DeliveryID -> OrderID, DeliveryBoyID, DeliveryTime, Status` and `OrderID -> {the rest}`. Candidate keys `{DeliveryID}` and `{OrderID}` (each order has at most one delivery).
+
+**Payment** — `PaymentID -> OrderID, Amount, PaymentMethod, PaymentDate` and `OrderID -> {the rest}`. Candidate keys `{PaymentID}` and `{OrderID}` (one payment per order).
+
+**Reservation** — `ReservationID -> {all other attributes}` and `{TableID, ReservationDate, ReservationTime} -> {the rest}`. Candidate keys `{ReservationID}` and `{TableID, ReservationDate, ReservationTime}` (a table cannot be double-booked at the same date and time).
+
+**UserAccount** — `UserID -> Username, Password, Role` and `Username -> UserID, Password, Role`. Candidate keys `{UserID}` and `{Username}` (`Username` is `UNIQUE`).
+
+Because every table is already in BCNF (which is stricter than 3NF), all tables are also in 3NF, 2NF, and 1NF, and no decomposition is required.
 
 ---
 
@@ -154,7 +176,7 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-### Auto-promote to premium at $200 lifetime spend — `AFTER UPDATE ON Orders`
+### Auto-promote to premium at $200 lifetime spend — `AFTER INSERT OR UPDATE ON Orders`
 
 ```sql
 CREATE OR REPLACE FUNCTION fn_update_premium_status()
@@ -162,18 +184,20 @@ RETURNS TRIGGER AS $$
 BEGIN
     UPDATE Customer
     SET IsPremium = 'Yes'
-    WHERE CustomerID IN (
-        SELECT O.CustomerID FROM Orders O
-        GROUP BY O.CustomerID
-        HAVING SUM(O.TotalAmount) >= 200
-    )
-    AND IsPremium = 'No';
+    WHERE CustomerID = NEW.CustomerID
+      AND IsPremium = 'No'
+      AND (
+          SELECT SUM(O.TotalAmount) FROM Orders O
+          WHERE O.CustomerID = NEW.CustomerID
+      ) >= 200;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 ```
 
-The `AND IsPremium = 'No'` guard avoids redundant writes when the customer is already premium.
+Firing on both `INSERT` and `UPDATE` means a new order that crosses $200 promotes the customer immediately. Keying the update on `NEW.CustomerID` re-checks only the customer whose order changed (rather than re-scanning every customer), and the `AND IsPremium = 'No'` guard avoids redundant writes when they are already premium. Promotion is one-way by design: cumulative lifetime spend does not decrease under normal use, so customers are never demoted.
+
+`IsPremium` is deliberately dual-sourced. The trigger grants premium *automatically* once lifetime spend reaches $200, and staff can also set it *manually* on the Customer form — for example, to comp a VIP or honor a promotion that isn't spend-based. Because the trigger only ever promotes, a manually granted status is never overwritten by it, and an automatically earned one is never revoked. In other words, `$200` is the automatic floor for premium, not the only path to it.
 
 ### Block deletion of customers with orders — `BEFORE DELETE ON Customer`
 
@@ -329,3 +353,21 @@ Additional GUI screenshots live in [`screenshots/gui/`](screenshots/gui/).
 ## 8. Data Source
 
 Menu items (IDs 101–132) come from the [Maven Analytics Restaurant Orders dataset](https://github.com/zainhaidar16/Restaurant-Order-Analysis). Beverage items (IDs 133–138) and all other seed data were generated to exercise the schema.
+
+The bundled [`sql/seed.sql`](../sql/seed.sql) populates all eleven tables with a mix of real and synthetic data:
+
+| Table | Rows | Notes |
+|---|---|---|
+| UserAccount | 3 | Admin, Staff, Manager logins for the GUI |
+| Area | 8 | Area codes 10001–10008 |
+| Customer | 15 | Mix of premium and non-premium |
+| MenuItem | 38 | 32 real items (Maven Analytics) + 6 beverages |
+| DineInTable | 8 | Various capacities and locations |
+| DeliveryBoy | 5 | Areas 10006–10008 intentionally have no driver |
+| Orders | 25 | Dine-In, Online, and Phone |
+| OrderItem | 83 | Line items linking orders to menu items |
+| Delivery | 10 | Online/Phone orders only |
+| Payment | 25 | One per order |
+| Reservation | 8 | Various statuses |
+
+Several rows are constructed to exercise specific queries — for example, Customer 13 has no orders (for the anti-join), Customer 1 has ordered every beverage (for the relational-division query), and areas 10006–10008 have no delivery driver.

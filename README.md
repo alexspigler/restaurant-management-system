@@ -1,6 +1,8 @@
 # Restaurant Management Database System
 
-A full-stack restaurant management application backed by a normalized PostgreSQL database, with a Java Swing GUI for browsing, searching, and managing customers, menu items, orders, deliveries, payments, and reservations.
+A restaurant management system backed by a normalized PostgreSQL database, with a Java Swing desktop client for browsing, searching, and managing customers, menu items, orders, deliveries, payments, and reservations.
+
+*Originally developed as a two-person university database project.*
 
 ## Tech Stack
 
@@ -11,7 +13,7 @@ A full-stack restaurant management application backed by a normalized PostgreSQL
 ## Highlights
 
 - **11-table relational schema** normalized to BCNF, with per-table functional-dependency analysis
-- **Real restaurant order data** from the Maven Analytics dataset (32 menu items) augmented with synthetic customers, orders, and deliveries
+- **Real restaurant order data** — 32 menu items from the Maven Analytics dataset, plus 6 synthetic beverages, augmented with synthetic customers, orders, and deliveries
 - **10 SQL queries** spanning multi-table joins, GROUP BY aggregation, set operations (`INTERSECT`, `EXCEPT`), and relational division via `NOT EXISTS`
 - **2 views** (`CustomerOrderSummary`, `OrderDetails`) encapsulating common join + aggregation patterns
 - **3 triggers** enforcing cross-table business rules:
