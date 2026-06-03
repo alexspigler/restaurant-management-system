@@ -36,7 +36,7 @@ public class DatabaseHelper {
 
  
     public static DefaultTableModel getAllCustomers() throws SQLException {
-        String[] columns = {"CustomerID", "FirstName", "LastName", "Phone", "Email", "AreaCode", "JoinDate", "IsPremium"};
+        String[] columns = {"CustomerID", "FirstName", "LastName", "Phone", "Email", "AreaCode", "JoinDate", "IsPremium", "Street"};
 
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
@@ -45,7 +45,7 @@ public class DatabaseHelper {
             }
         };
 
-        String sql = "SELECT CustomerID, FirstName, LastName, Phone, Email, AreaCode, JoinDate, IsPremium " +
+        String sql = "SELECT CustomerID, FirstName, LastName, Phone, Email, AreaCode, JoinDate, IsPremium, Street " +
                 "FROM Customer ORDER BY CustomerID";
 
         try (Connection conn = getConnection();
@@ -61,7 +61,8 @@ public class DatabaseHelper {
                         rs.getString("Email"),
                         rs.getString("AreaCode"),
                         rs.getDate("JoinDate"),
-                        rs.getString("IsPremium")
+                        rs.getString("IsPremium"),
+                        rs.getString("Street")
                 });
             }
         }
@@ -70,7 +71,7 @@ public class DatabaseHelper {
     }
 
     public static DefaultTableModel searchCustomers(String keyword) throws SQLException {
-        String[] columns = {"CustomerID", "FirstName", "LastName", "Phone", "Email", "AreaCode", "JoinDate", "IsPremium"};
+        String[] columns = {"CustomerID", "FirstName", "LastName", "Phone", "Email", "AreaCode", "JoinDate", "IsPremium", "Street"};
 
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
@@ -79,7 +80,7 @@ public class DatabaseHelper {
             }
         };
 
-        String sql = "SELECT CustomerID, FirstName, LastName, Phone, Email, AreaCode, JoinDate, IsPremium " +
+        String sql = "SELECT CustomerID, FirstName, LastName, Phone, Email, AreaCode, JoinDate, IsPremium, Street " +
                 "FROM Customer " +
                 "WHERE CAST(CustomerID AS TEXT) ILIKE ? " +
                 "   OR FirstName ILIKE ? " +
@@ -111,7 +112,8 @@ public class DatabaseHelper {
                             rs.getString("Email"),
                             rs.getString("AreaCode"),
                             rs.getDate("JoinDate"),
-                            rs.getString("IsPremium")
+                            rs.getString("IsPremium"),
+                            rs.getString("Street")
                     });
                 }
             }
@@ -145,10 +147,11 @@ public class DatabaseHelper {
     }
 
     public static void updateCustomer(int id, String first, String last, String phone,
-                                      String email, String isPremium) throws SQLException {
+                                      String email, String street, String areaCode,
+                                      String isPremium) throws SQLException {
 
         String sql = "UPDATE Customer " +
-                "SET FirstName=?, LastName=?, Phone=?, Email=?, IsPremium=? " +
+                "SET FirstName=?, LastName=?, Phone=?, Email=?, Street=?, AreaCode=?, IsPremium=? " +
                 "WHERE CustomerID=?";
 
         try (Connection conn = getConnection();
@@ -158,8 +161,10 @@ public class DatabaseHelper {
             pstmt.setString(2, last);
             pstmt.setString(3, phone);
             pstmt.setString(4, email);
-            pstmt.setString(5, isPremium);
-            pstmt.setInt(6, id);
+            pstmt.setString(5, street);
+            pstmt.setString(6, areaCode);
+            pstmt.setString(7, isPremium);
+            pstmt.setInt(8, id);
 
             pstmt.executeUpdate();
         }

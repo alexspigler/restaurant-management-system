@@ -11,6 +11,7 @@ public class RestaurantForm extends JFrame {
     private JTextField txtCustLast;
     private JTextField txtCustPhone;
     private JTextField txtCustEmail;
+    private JTextField txtCustStreet;
     private JTextField txtCustArea;
     private JComboBox<String> cmbCustPremium;
     private JTextField txtCustSearch;
@@ -58,6 +59,7 @@ public class RestaurantForm extends JFrame {
         txtCustLast   = new JTextField(10);
         txtCustPhone  = new JTextField(12);
         txtCustEmail  = new JTextField(15);
+        txtCustStreet = new JTextField(12);
         txtCustArea   = new JTextField(6);
         cmbCustPremium = new JComboBox<>(new String[]{"Yes", "No"});
         txtCustSearch = new JTextField(15);
@@ -83,16 +85,18 @@ public class RestaurantForm extends JFrame {
         gbc.gridx = 2; inputPanel.add(new JLabel("Last Name"),  gbc);
         gbc.gridx = 3; inputPanel.add(new JLabel("Phone"),      gbc);
         gbc.gridx = 4; inputPanel.add(new JLabel("Email"),      gbc);
-        gbc.gridx = 5; inputPanel.add(new JLabel("Area Code"),  gbc);
-        gbc.gridx = 6; inputPanel.add(new JLabel("Premium"),    gbc);
+        gbc.gridx = 5; inputPanel.add(new JLabel("Street"),     gbc);
+        gbc.gridx = 6; inputPanel.add(new JLabel("Area Code"),  gbc);
+        gbc.gridx = 7; inputPanel.add(new JLabel("Premium"),    gbc);
         gbc.gridy = 1;
         gbc.gridx = 0; inputPanel.add(txtCustID,      gbc);
         gbc.gridx = 1; inputPanel.add(txtCustFirst,   gbc);
         gbc.gridx = 2; inputPanel.add(txtCustLast,    gbc);
         gbc.gridx = 3; inputPanel.add(txtCustPhone,   gbc);
         gbc.gridx = 4; inputPanel.add(txtCustEmail,   gbc);
-        gbc.gridx = 5; inputPanel.add(txtCustArea,    gbc);
-        gbc.gridx = 6; inputPanel.add(cmbCustPremium, gbc);
+        gbc.gridx = 5; inputPanel.add(txtCustStreet,  gbc);
+        gbc.gridx = 6; inputPanel.add(txtCustArea,    gbc);
+        gbc.gridx = 7; inputPanel.add(cmbCustPremium, gbc);
 
         
         gbc.gridy = 2;
@@ -154,6 +158,9 @@ public class RestaurantForm extends JFrame {
 
         txtCustArea.setText((String) tblCustomers.getModel().getValueAt(modelRow, 5));
         cmbCustPremium.setSelectedItem((String) tblCustomers.getModel().getValueAt(modelRow, 7));
+
+        Object street = tblCustomers.getModel().getValueAt(modelRow, 8);
+        txtCustStreet.setText(street != null ? street.toString() : "");
     }
     private void onAddCustomer() {
         try {
@@ -163,7 +170,7 @@ public class RestaurantForm extends JFrame {
                     txtCustLast.getText().trim(),
                     txtCustPhone.getText().trim(),
                     txtCustEmail.getText().trim(),
-                    "",
+                    txtCustStreet.getText().trim(),
                     txtCustArea.getText().trim(),
                     new Date(System.currentTimeMillis()),
                     cmbCustPremium.getSelectedItem().toString()
@@ -190,6 +197,8 @@ public class RestaurantForm extends JFrame {
                     txtCustLast.getText().trim(),
                     txtCustPhone.getText().trim(),
                     txtCustEmail.getText().trim(),
+                    txtCustStreet.getText().trim(),
+                    txtCustArea.getText().trim(),
                     cmbCustPremium.getSelectedItem().toString()
             );
             loadCustomers();
@@ -237,6 +246,7 @@ public class RestaurantForm extends JFrame {
         txtCustLast.setText("");
         txtCustPhone.setText("");
         txtCustEmail.setText("");
+        txtCustStreet.setText("");
         txtCustArea.setText("");
         cmbCustPremium.setSelectedIndex(0);
         selectedCustomerID = -1;

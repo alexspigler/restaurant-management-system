@@ -12,15 +12,7 @@ A restaurant management system backed by a normalized PostgreSQL database, with 
 
 ## Highlights
 
-- **11-table relational schema** normalized to BCNF, with per-table functional-dependency analysis
-- **Real restaurant order data** — 32 menu items from the Maven Analytics dataset, plus 6 synthetic beverages, augmented with synthetic customers, orders, and deliveries
-- **10 SQL queries** spanning multi-table joins, GROUP BY aggregation, set operations (`INTERSECT`, `EXCEPT`), and relational division via `NOT EXISTS`
-- **2 views** (`CustomerOrderSummary`, `OrderDetails`) encapsulating common join + aggregation patterns
-- **3 triggers** enforcing cross-table business rules:
-  - Block delivery creation for Dine-In orders
-  - Auto-promote customers to *premium* status once lifetime spend reaches $200
-  - Block deletion of customers with existing orders
-- **Java Swing GUI** with login authentication, case-insensitive keyword search (`ILIKE`), CRUD for Customers and Menu Items, and live MAX/MIN/AVG analytics over the Orders and MenuItem tables
+The schema is 11 tables normalized to BCNF, with a per-table functional-dependency analysis documented in [docs/DESIGN.md](docs/DESIGN.md). Menu data is real (32 items from the Maven Analytics Restaurant Orders dataset); the beverages, customers, orders, and deliveries are synthetic. The SQL layer includes 10 analytical queries (multi-table joins, GROUP BY aggregation, `INTERSECT`/`EXCEPT` set operations, and relational division via `NOT EXISTS`), plus two views (`CustomerOrderSummary`, `OrderDetails`). Three triggers enforce cross-table rules: blocking deliveries on Dine-In orders, auto-promoting to premium at $200 lifetime spend, and blocking deletion of customers who still have orders. The Java Swing client handles login, case-insensitive `ILIKE` search, full CRUD for customers and menu items, and live MAX/MIN/AVG statistics, all over JDBC.
 
 ## Entity-Relationship Diagram
 

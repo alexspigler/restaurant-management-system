@@ -81,31 +81,29 @@ The full DDL with all foreign keys, `NOT NULL`, and `CHECK` constraints lives in
 
 ### Normalization (BCNF)
 
-All eleven tables are in **BCNF**: for every non-trivial functional dependency `X -> Y`, the left-hand side `X` is a superkey. FDs are derived from the application semantics, not just the current data. The per-table analysis follows.
+All eleven tables are in BCNF: every non-trivial functional dependency has a superkey on its left-hand side, so there are no partial or transitive dependencies. The dependencies below follow from the intended meaning of the data, not from any particular set of rows.
 
-**Area** — `AreaCode -> AreaName, City`. Candidate key `{AreaCode}`.
+For most tables this is immediate. The primary key determines every other column, and there are no further dependencies:
 
-**Customer** — `CustomerID -> {all other attributes}`. Candidate key `{CustomerID}`. (`Email` is `UNIQUE` but nullable, so it is not treated as a candidate key.) A suspected transitive `AreaCode -> City` does not arise: Customer stores only `AreaCode` (a foreign key), and `City` lives solely in Area, so the dependency is correctly isolated.
+| Table | Primary FD | Candidate key |
+|---|---|---|
+| Area | `AreaCode -> AreaName, City` | `{AreaCode}` |
+| Customer | `CustomerID -> (everything else)` | `{CustomerID}` |
+| MenuItem | `ItemID -> ItemName, Category, Description, Price, IsAvailable` | `{ItemID}` |
+| DineInTable | `TableID -> Capacity, Location` | `{TableID}` |
+| Orders | `OrderID -> CustomerID, OrderDate, OrderType, TotalAmount, Discount` | `{OrderID}` |
 
-**MenuItem** — `ItemID -> ItemName, Category, Description, Price, IsAvailable`. Candidate key `{ItemID}`.
+A few tables carry a second candidate key, or a dependency worth noting:
 
-**DineInTable** — `TableID -> Capacity, Location`. Candidate key `{TableID}`.
+- **DeliveryBoy** has two candidate keys, `{DeliveryBoyID}` and `{AreaCode}`. The `UNIQUE` constraint on `AreaCode` makes its relationship to Area one-to-one, so either attribute functionally determines the rest of the row.
+- **Delivery** and **Payment** each have `{OrderID}` as a candidate key in addition to their own ID, since an order has at most one delivery and one payment.
+- **Reservation** also keys on `{TableID, ReservationDate, ReservationTime}`, which enforces that a table cannot be booked twice at the same date and time.
+- **UserAccount** keys on `{Username}` as well as `{UserID}`, since `Username` is declared `UNIQUE`.
+- **OrderItem** uses the composite key `{OrderID, ItemID}`. A natural candidate dependency, `ItemID -> UnitPrice`, does not hold: `UnitPrice` records the price at the time of the order, so the same item may carry different unit prices across orders.
 
-**DeliveryBoy** — `DeliveryBoyID -> Name, Phone, AreaCode` and `AreaCode -> DeliveryBoyID, Name, Phone`. Two candidate keys, `{DeliveryBoyID}` and `{AreaCode}` (the `UNIQUE` on `AreaCode` enforces the one-to-one with Area). Both left-hand sides are superkeys.
+Two cases resemble violations but are not. `AreaCode -> City` would be a transitive dependency in Customer, but Customer does not store `City` at all; it lives only in Area and is reached through the `AreaCode` foreign key. `Orders.TotalAmount` is a stored copy of `SUM(Quantity * UnitPrice) - Discount`, kept to avoid recomputing it on every read; `OrderID` still determines it, so BCNF holds, and keeping it consistent is an application-layer concern rather than a normalization one.
 
-**Orders** — `OrderID -> CustomerID, OrderDate, OrderType, TotalAmount, Discount`. Candidate key `{OrderID}`. Note that `CustomerID -> Discount` does **not** hold (the same customer's orders can carry different discounts). `TotalAmount` is a stored aggregate that could be derived from `SUM(Quantity * UnitPrice) - Discount`; the FD `OrderID -> TotalAmount` still has a superkey on the left, so BCNF is not violated — keeping it consistent is an application-layer integrity concern, not a normalization one.
-
-**OrderItem** — `{OrderID, ItemID} -> Quantity, UnitPrice`. Candidate key `{OrderID, ItemID}` (composite). `ItemID -> UnitPrice` does **not** hold: `UnitPrice` is a snapshot at order time, so the same item can carry different unit prices across orders. No BCNF violation.
-
-**Delivery** — `DeliveryID -> OrderID, DeliveryBoyID, DeliveryTime, Status` and `OrderID -> {the rest}`. Candidate keys `{DeliveryID}` and `{OrderID}` (each order has at most one delivery).
-
-**Payment** — `PaymentID -> OrderID, Amount, PaymentMethod, PaymentDate` and `OrderID -> {the rest}`. Candidate keys `{PaymentID}` and `{OrderID}` (one payment per order).
-
-**Reservation** — `ReservationID -> {all other attributes}` and `{TableID, ReservationDate, ReservationTime} -> {the rest}`. Candidate keys `{ReservationID}` and `{TableID, ReservationDate, ReservationTime}` (a table cannot be double-booked at the same date and time).
-
-**UserAccount** — `UserID -> Username, Password, Role` and `Username -> UserID, Password, Role`. Candidate keys `{UserID}` and `{Username}` (`Username` is `UNIQUE`).
-
-Because every table is already in BCNF (which is stricter than 3NF), all tables are also in 3NF, 2NF, and 1NF, and no decomposition is required.
+Because every table is already in BCNF (which is stricter than 3NF), the schema is also in 3NF, 2NF, and 1NF, and no decomposition is required.
 
 ---
 
@@ -197,7 +195,7 @@ $$ LANGUAGE plpgsql;
 
 Firing on both `INSERT` and `UPDATE` means a new order that crosses $200 promotes the customer immediately. Keying the update on `NEW.CustomerID` re-checks only the customer whose order changed (rather than re-scanning every customer), and the `AND IsPremium = 'No'` guard avoids redundant writes when they are already premium. Promotion is one-way by design: cumulative lifetime spend does not decrease under normal use, so customers are never demoted.
 
-`IsPremium` is deliberately dual-sourced. The trigger grants premium *automatically* once lifetime spend reaches $200, and staff can also set it *manually* on the Customer form — for example, to comp a VIP or honor a promotion that isn't spend-based. Because the trigger only ever promotes, a manually granted status is never overwritten by it, and an automatically earned one is never revoked. In other words, `$200` is the automatic floor for premium, not the only path to it.
+`IsPremium` has two sources. The trigger sets it automatically once a customer's lifetime spend reaches $200, and staff can also set it manually on the Customer form (for example, to comp a frequent customer or apply a promotion not tied to spend). Because the trigger only ever grants premium, it does not override a manually set flag, and a customer who reaches the threshold keeps the status even if a later order is reduced. The $200 rule is therefore an automatic floor for premium status, not the only path to it.
 
 ### Block deletion of customers with orders — `BEFORE DELETE ON Customer`
 
@@ -322,10 +320,10 @@ SELECT 1 FROM UserAccount WHERE Username = ? AND Password = ?;
 
 Tabbed interface across three data domains: Customers, Menu Items, and Orders.
 
-**Keyword search.** Each searchable tab has a text field that runs a case-insensitive partial match across every displayed column using `ILIKE`:
+**Keyword search.** Each searchable tab has a text field that runs a case-insensitive partial match across the main text columns using `ILIKE`:
 
 ```sql
-SELECT CustomerID, FirstName, LastName, Phone, Email, AreaCode, JoinDate, IsPremium
+SELECT CustomerID, FirstName, LastName, Phone, Email, AreaCode, JoinDate, IsPremium, Street
 FROM Customer
 WHERE CAST(CustomerID AS TEXT) ILIKE '%' || ? || '%'
    OR FirstName ILIKE '%' || ? || '%'
