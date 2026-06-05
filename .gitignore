@@ -1,12 +1,6 @@
 # macOS
 .DS_Store
 
-# Compiled Java
-*.class
-out/
-build/
-target/
-
 # IntelliJ IDEA
 .idea/
 *.iml
@@ -26,3 +20,6 @@ target/
 
 # Environment / secrets
 .env
+
+# Local-only GUI backup (kept on disk, excluded from the SQL repo)
+GITIGNORED - GUI/

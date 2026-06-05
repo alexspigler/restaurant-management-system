@@ -13,7 +13,7 @@
 -- =============================================
 
 -- =============================================
--- UserAccount (for GUI login)
+-- UserAccount (application user accounts and roles)
 -- =============================================
 INSERT INTO UserAccount (UserID, Username, Password, Role) VALUES
 (1, 'admin', 'admin123', 'Admin'),
@@ -59,50 +59,50 @@ INSERT INTO Customer (CustomerID, FirstName, LastName, Phone, Email, Street, Are
 --   zainhaidar16/Restaurant-Order-Analysis (GitHub)
 -- Items 133–138: Beverages added for schema coverage
 -- =============================================
-INSERT INTO MenuItem (ItemID, ItemName, Category, Description, Price, IsAvailable) VALUES
+INSERT INTO MenuItem (ItemID, ItemName, Category, Price, IsAvailable) VALUES
 -- American (real data)
-(101, 'Hamburger', 'American', NULL, 12.95, 'Yes'),
-(102, 'Cheeseburger', 'American', NULL, 13.95, 'Yes'),
-(103, 'Hot Dog', 'American', NULL, 9.00, 'Yes'),
-(104, 'Veggie Burger', 'American', NULL, 10.50, 'Yes'),
-(105, 'Mac & Cheese', 'American', NULL, 7.00, 'Yes'),
-(106, 'French Fries', 'American', NULL, 7.00, 'Yes'),
+(101, 'Hamburger', 'American',12.95, 'Yes'),
+(102, 'Cheeseburger', 'American',13.95, 'Yes'),
+(103, 'Hot Dog', 'American',9.00, 'Yes'),
+(104, 'Veggie Burger', 'American',10.50, 'Yes'),
+(105, 'Mac & Cheese', 'American',7.00, 'Yes'),
+(106, 'French Fries', 'American',7.00, 'Yes'),
 -- Asian (real data)
-(107, 'Orange Chicken', 'Asian', NULL, 16.50, 'Yes'),
-(108, 'Tofu Pad Thai', 'Asian', NULL, 14.50, 'Yes'),
-(109, 'Korean Beef Bowl', 'Asian', NULL, 17.95, 'Yes'),
-(110, 'Pork Ramen', 'Asian', NULL, 17.95, 'Yes'),
-(111, 'California Roll', 'Asian', NULL, 11.95, 'Yes'),
-(112, 'Salmon Roll', 'Asian', NULL, 14.95, 'Yes'),
-(113, 'Edamame', 'Asian', NULL, 5.00, 'Yes'),
-(114, 'Potstickers', 'Asian', NULL, 9.00, 'Yes'),
+(107, 'Orange Chicken', 'Asian',16.50, 'Yes'),
+(108, 'Tofu Pad Thai', 'Asian',14.50, 'Yes'),
+(109, 'Korean Beef Bowl', 'Asian',17.95, 'Yes'),
+(110, 'Pork Ramen', 'Asian',17.95, 'Yes'),
+(111, 'California Roll', 'Asian',11.95, 'Yes'),
+(112, 'Salmon Roll', 'Asian',14.95, 'Yes'),
+(113, 'Edamame', 'Asian',5.00, 'Yes'),
+(114, 'Potstickers', 'Asian',9.00, 'Yes'),
 -- Mexican (real data)
-(115, 'Chicken Tacos', 'Mexican', NULL, 11.95, 'Yes'),
-(116, 'Steak Tacos', 'Mexican', NULL, 13.95, 'Yes'),
-(117, 'Chicken Burrito', 'Mexican', NULL, 12.95, 'Yes'),
-(118, 'Steak Burrito', 'Mexican', NULL, 14.95, 'Yes'),
-(119, 'Chicken Torta', 'Mexican', NULL, 11.95, 'Yes'),
-(120, 'Steak Torta', 'Mexican', NULL, 13.95, 'No'),
-(121, 'Cheese Quesadillas', 'Mexican', NULL, 10.50, 'Yes'),
-(122, 'Chips & Salsa', 'Mexican', NULL, 7.00, 'Yes'),
-(123, 'Chips & Guacamole', 'Mexican', NULL, 9.00, 'Yes'),
+(115, 'Chicken Tacos', 'Mexican',11.95, 'Yes'),
+(116, 'Steak Tacos', 'Mexican',13.95, 'Yes'),
+(117, 'Chicken Burrito', 'Mexican',12.95, 'Yes'),
+(118, 'Steak Burrito', 'Mexican',14.95, 'Yes'),
+(119, 'Chicken Torta', 'Mexican',11.95, 'Yes'),
+(120, 'Steak Torta', 'Mexican',13.95, 'No'),
+(121, 'Cheese Quesadillas', 'Mexican',10.50, 'Yes'),
+(122, 'Chips & Salsa', 'Mexican',7.00, 'Yes'),
+(123, 'Chips & Guacamole', 'Mexican',9.00, 'Yes'),
 -- Italian (real data)
-(124, 'Spaghetti', 'Italian', NULL, 14.50, 'Yes'),
-(125, 'Spaghetti & Meatballs', 'Italian', NULL, 17.95, 'Yes'),
-(126, 'Fettuccine Alfredo', 'Italian', NULL, 14.50, 'Yes'),
-(127, 'Meat Lasagna', 'Italian', NULL, 17.95, 'Yes'),
-(128, 'Cheese Lasagna', 'Italian', NULL, 15.50, 'Yes'),
-(129, 'Mushroom Ravioli', 'Italian', NULL, 15.50, 'Yes'),
-(130, 'Shrimp Scampi', 'Italian', NULL, 19.95, 'Yes'),
-(131, 'Chicken Parmesan', 'Italian', NULL, 17.95, 'Yes'),
-(132, 'Eggplant Parmesan', 'Italian', NULL, 16.95, 'No'),
+(124, 'Spaghetti', 'Italian',14.50, 'Yes'),
+(125, 'Spaghetti & Meatballs', 'Italian',17.95, 'Yes'),
+(126, 'Fettuccine Alfredo', 'Italian',14.50, 'Yes'),
+(127, 'Meat Lasagna', 'Italian',17.95, 'Yes'),
+(128, 'Cheese Lasagna', 'Italian',15.50, 'Yes'),
+(129, 'Mushroom Ravioli', 'Italian',15.50, 'Yes'),
+(130, 'Shrimp Scampi', 'Italian',19.95, 'Yes'),
+(131, 'Chicken Parmesan', 'Italian',17.95, 'Yes'),
+(132, 'Eggplant Parmesan', 'Italian',16.95, 'No'),
 -- Beverages (added for schema coverage)
-(133, 'Coca-Cola', 'Beverage', NULL, 2.50, 'Yes'),
-(134, 'Lemonade', 'Beverage', NULL, 3.00, 'Yes'),
-(135, 'Iced Tea', 'Beverage', NULL, 2.75, 'Yes'),
-(136, 'Coffee', 'Beverage', NULL, 3.50, 'Yes'),
-(137, 'Orange Juice', 'Beverage', NULL, 3.25, 'Yes'),
-(138, 'Sparkling Water', 'Beverage', NULL, 2.00, 'Yes');
+(133, 'Coca-Cola', 'Beverage',2.50, 'Yes'),
+(134, 'Lemonade', 'Beverage',3.00, 'Yes'),
+(135, 'Iced Tea', 'Beverage',2.75, 'Yes'),
+(136, 'Coffee', 'Beverage',3.50, 'Yes'),
+(137, 'Orange Juice', 'Beverage',3.25, 'Yes'),
+(138, 'Sparkling Water', 'Beverage',2.00, 'Yes');
 
 -- =============================================
 -- DineInTable
@@ -133,6 +133,7 @@ INSERT INTO DeliveryBoy (DeliveryBoyID, Name, Phone, AreaCode) VALUES
 -- Mix of Dine-In, Online, and Phone orders.
 -- Discounts applied only to premium customers.
 -- Customer 13 intentionally has no orders (for query testing).
+-- Customer 7's later orders (1026-1027) push lifetime spend past $200, firing the auto-premium trigger.
 -- =============================================
 INSERT INTO Orders (OrderID, CustomerID, OrderDate, OrderType, TotalAmount, Discount) VALUES
 (1001, 1, '2023-01-15', 'Dine-In', 45.95, 5.00),
@@ -159,7 +160,9 @@ INSERT INTO Orders (OrderID, CustomerID, OrderDate, OrderType, TotalAmount, Disc
 (1022, 10, '2023-03-08', 'Online', 41.65, 5.00),
 (1023, 14, '2023-03-10', 'Online', 37.65, 4.00),
 (1024, 3, '2023-03-12', 'Dine-In', 43.40, 5.00),
-(1025, 6, '2023-03-15', 'Online', 16.75, 0.00);
+(1025, 6, '2023-03-15', 'Online', 16.75, 0.00),
+(1026, 7, '2023-03-18', 'Dine-In', 118.25, 0.00),
+(1027, 7, '2023-03-22', 'Online', 56.10, 0.00);
 
 -- =============================================
 -- OrderItem
@@ -275,7 +278,22 @@ INSERT INTO OrderItem (OrderID, ItemID, Quantity, UnitPrice) VALUES
 -- Order 1025 (Customer 6, Online)
 (1025, 113, 1, 5.00),
 (1025, 114, 1, 9.00),
-(1025, 135, 1, 2.75);
+(1025, 135, 1, 2.75),
+-- Order 1026 (Customer 7, Dine-In) -- large group order; crosses the $200 premium threshold
+(1026, 130, 2, 19.95),
+(1026, 127, 1, 17.95),
+(1026, 125, 1, 17.95),
+(1026, 131, 1, 17.95),
+(1026, 122, 1, 7.00),
+(1026, 133, 3, 2.50),
+(1026, 136, 2, 3.50),
+(1026, 134, 1, 3.00),
+-- Order 1027 (Customer 7, Online)
+(1027, 109, 1, 17.95),
+(1027, 110, 1, 17.95),
+(1027, 112, 1, 14.95),
+(1027, 137, 1, 3.25),
+(1027, 138, 1, 2.00);
 
 -- =============================================
 -- Delivery
@@ -323,7 +341,9 @@ INSERT INTO Payment (PaymentID, OrderID, Amount, PaymentMethod, PaymentDate) VAL
 (22, 1022, 36.65, 'Online', '2023-03-08'),
 (23, 1023, 33.65, 'Credit Card', '2023-03-10'),
 (24, 1024, 38.40, 'Cash', '2023-03-12'),
-(25, 1025, 16.75, 'Online', '2023-03-15');
+(25, 1025, 16.75, 'Online', '2023-03-15'),
+(26, 1026, 118.25, 'Credit Card', '2023-03-18'),
+(27, 1027, 56.10, 'Online', '2023-03-22');
 
 -- =============================================
 -- Reservation

@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS Area;
 DROP TABLE IF EXISTS UserAccount;
 
 -- =============================================
--- UserAccount: GUI login authentication
+-- UserAccount: application user accounts and roles (access control)
 -- =============================================
 CREATE TABLE UserAccount (
     UserID INT PRIMARY KEY,
@@ -60,7 +60,6 @@ CREATE TABLE MenuItem (
     ItemID INT PRIMARY KEY,
     ItemName VARCHAR(100) NOT NULL,
     Category VARCHAR(20) NOT NULL CHECK (Category IN ('American', 'Asian', 'Mexican', 'Italian', 'Beverage')),
-    Description VARCHAR(500),
     Price DECIMAL(10, 2) NOT NULL CHECK (Price > 0),
     IsAvailable VARCHAR(3) NOT NULL CHECK (IsAvailable IN ('Yes', 'No'))
 );

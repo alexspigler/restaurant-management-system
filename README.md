@@ -1,46 +1,36 @@
 # Restaurant Management Database System
 
-A restaurant management system backed by a normalized PostgreSQL database, with a Java Swing desktop client for browsing, searching, and managing customers, menu items, orders, deliveries, payments, and reservations.
+A normalized PostgreSQL database for a restaurant — customers, menu items, orders, deliveries, payments, reservations, and staff accounts — with a documented BCNF design, analytical queries, business-rule triggers, and views.
 
 *Originally developed as a two-person university database project.*
 
 ## Tech Stack
 
 - **Database:** PostgreSQL 14+
-- **Language:** Java (Swing for GUI, JDBC for DB access)
-- **Driver:** `postgresql-42.7.10.jar` (shipped in `gui/lib/`)
+- **SQL:** constraints (PK / FK / CHECK / UNIQUE / NOT NULL), two views, three `PL/pgSQL` triggers, and ten analytical queries
 
 ## Highlights
 
-The schema is 11 tables normalized to BCNF, with a per-table functional-dependency analysis documented in [docs/DESIGN.md](docs/DESIGN.md). Menu data is real (32 items from the Maven Analytics Restaurant Orders dataset); the beverages, customers, orders, and deliveries are synthetic. The SQL layer includes 10 analytical queries (multi-table joins, GROUP BY aggregation, `INTERSECT`/`EXCEPT` set operations, and relational division via `NOT EXISTS`), plus two views (`CustomerOrderSummary`, `OrderDetails`). Three triggers enforce cross-table rules: blocking deliveries on Dine-In orders, auto-promoting to premium at $200 lifetime spend, and blocking deletion of customers who still have orders. The Java Swing client handles login, case-insensitive `ILIKE` search, full CRUD for customers and menu items, and live MAX/MIN/AVG statistics, all over JDBC.
+The schema is 11 tables normalized to BCNF, with a per-table functional-dependency analysis documented in [docs/DESIGN.md](docs/DESIGN.md). Menu data is real (32 items from the Maven Analytics Restaurant Orders dataset); the beverages, customers, orders, and deliveries are synthetic. The SQL layer includes 10 analytical queries (multi-table joins, GROUP BY aggregation, `INTERSECT`/`EXCEPT` set operations, and relational division via `NOT EXISTS`), plus two views (`CustomerOrderSummary`, `OrderDetails`) and three triggers enforcing cross-table rules: blocking deliveries on Dine-In orders, auto-promoting customers to premium at $200 lifetime spend, and blocking deletion of customers who still have orders.
 
 ## Entity-Relationship Diagram
 
-![ERD](docs/erd.png)
+![ERD](docs/erd.webp)
 
 ## Repository Layout
 
 ```
 ├── docs/
 │   ├── DESIGN.md               Full design and implementation walkthrough
-│   ├── erd.png                 Entity-relationship diagram
+│   ├── erd.webp                Entity-relationship diagram
 │   └── screenshots/
-│       ├── gui/                GUI screens — login, tabs, CRUD form, stats
 │       └── views/              View result screenshots
-├── sql/
-│   ├── schema.sql              CREATE TABLE with PK / FK / CHECK / UNIQUE / NOT NULL
-│   ├── seed.sql                Real + synthetic data (~200 rows across 11 tables)
-│   ├── views.sql               CustomerOrderSummary, OrderDetails
-│   ├── triggers.sql            Three business-rule triggers
-│   └── queries.sql             Ten sample queries
-└── gui/
-    ├── src/
-    │   ├── RestaurantApp.java      Main entry point
-    │   ├── LoginForm.java          Login window
-    │   ├── RestaurantForm.java     Main window — tabs, CRUD, stats
-    │   └── DatabaseHelper.java     All JDBC / SQL logic
-    └── lib/
-        └── postgresql-42.7.10.jar  JDBC driver
+└── sql/
+    ├── schema.sql              CREATE TABLE with PK / FK / CHECK / UNIQUE / NOT NULL
+    ├── seed.sql                Real + synthetic data (~245 rows across 11 tables)
+    ├── views.sql               CustomerOrderSummary, OrderDetails
+    ├── triggers.sql            Three business-rule triggers
+    └── queries.sql             Ten analytical queries
 ```
 
 ## Running It Locally
@@ -50,56 +40,23 @@ The schema is 11 tables normalized to BCNF, with a per-table functional-dependen
 ```bash
 createdb restaurant_db
 psql -d restaurant_db -f sql/schema.sql
-psql -d restaurant_db -f sql/seed.sql
+psql -d restaurant_db -f sql/triggers.sql   # before seed, so the premium-promotion trigger fires as orders load
 psql -d restaurant_db -f sql/views.sql
-psql -d restaurant_db -f sql/triggers.sql
+psql -d restaurant_db -f sql/seed.sql
 ```
 
-### 2. Configure DB credentials
-
-Edit the constants near the top of `gui/src/DatabaseHelper.java` to match your local PostgreSQL setup:
-
-```java
-private static final String DB_HOST = "your_host";       // e.g. "localhost"
-private static final String DB_PORT = "5432";            // default PostgreSQL port
-private static final String DB_NAME = "restaurant_db";   // matches the createdb above
-private static final String DB_USER = "your_username";
-private static final String DB_PASS = "your_password";
-```
-
-### 3. Compile and run
+### 2. Explore the database
 
 ```bash
-cd gui
-javac -cp "lib/postgresql-42.7.10.jar" -d out src/*.java
-java  -cp "out:lib/postgresql-42.7.10.jar" RestaurantApp
+psql -d restaurant_db -f sql/queries.sql     # runs all 10 analytical queries with their output
+psql -d restaurant_db -c "\d+ orders"        # inspect a table: columns, types, constraints
+psql -d restaurant_db -c "SELECT CustomerID, IsPremium FROM Customer WHERE CustomerID = 7;"
+                                             # James Wilson shows 'Yes' — promoted by the premium trigger
 ```
-
-### Default login credentials (from `seed.sql`)
-
-| Username | Password | Role    |
-|----------|----------|---------|
-| admin    | admin123 | Admin   |
-| staff1   | pass456  | Staff   |
-| manager  | mgr789   | Manager |
-
-> **Note:** This is a demo project — credentials are stored and checked as plaintext for simplicity. Production systems should store only salted password hashes (e.g. bcrypt) and never log or display them.
-
-## Screenshots
-
-**Customer management tab — browse, search, add, update, delete**
-
-![Customer Tab](docs/screenshots/gui/customer-tab.png)
-
-**Live aggregate statistics over the Orders table**
-
-![Order Stats](docs/screenshots/gui/order-stats.png)
-
-More screenshots live under [`docs/screenshots/`](docs/screenshots/).
 
 ## Design Doc
 
-For the full walkthrough — domain model, schema design, BCNF analysis, views, triggers, sample queries, and GUI behavior — see **[docs/DESIGN.md](docs/DESIGN.md)**.
+For the full walkthrough — domain model, schema design, BCNF analysis, views, triggers, and sample queries — see **[docs/DESIGN.md](docs/DESIGN.md)**.
 
 ## Data Source
 

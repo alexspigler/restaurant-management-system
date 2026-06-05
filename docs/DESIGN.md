@@ -1,6 +1,6 @@
 # Design & Implementation
 
-This document covers the data model, schema, SQL, and GUI behind the Restaurant Management Database System.
+This document covers the data model, schema, and SQL behind the Restaurant Management Database System.
 
 ---
 
@@ -19,7 +19,7 @@ The system models a restaurant that supports both in-house dining and remote ord
 
 ## 2. Entities and Relationships
 
-The system is built around ten business entities plus a separate table for GUI authentication:
+The system is built around ten business entities plus a table for application user accounts and roles:
 
 | Entity | Purpose |
 |---|---|
@@ -33,7 +33,7 @@ The system is built around ten business entities plus a separate table for GUI a
 | **Delivery** | Delivery record for online/phone orders |
 | **Payment** | Payment transactions, one per order |
 | **Reservation** | Dine-in table reservations with date, time, and party size |
-| **UserAccount** | Login accounts for the Swing application (stores a role per user) |
+| **UserAccount** | Application user accounts and roles, for access control |
 
 Key design decisions:
 
@@ -42,12 +42,12 @@ Key design decisions:
 - **`UnitPrice` as a historical snapshot.** `OrderItem.UnitPrice` is captured at order time, not looked up from `MenuItem.Price`. When the restaurant raises a price, historical orders preserve what the customer was actually charged.
 - **Participation constraints.** Every order must belong to a registered customer, every payment must belong to an order, and every delivery must be assigned to a delivery driver — enforced by `NOT NULL` foreign keys.
 - **`Orders` is named in the plural** to avoid colliding with the SQL reserved word `ORDER` (as in `ORDER BY`), which is invalid as a bare table name in most engines.
-- **`UserAccount` is an application-layer table.** It exists only to authenticate the Swing client (storing a role per user) and has no foreign-key relationships to the operational entities — it is intentionally outside the restaurant business domain.
+- **`UserAccount` is an application-layer table.** It models system user accounts and their roles for access control, with no foreign-key relationships to the operational entities — it is intentionally outside the restaurant business domain. (Passwords are stored in plaintext for this demo; a production system would store salted hashes.)
 - **`MenuItem.Category` uses cuisine types** (`American`, `Asian`, `Mexican`, `Italian`, `Beverage`) rather than a coarse food/beverage split, enabling category-level filtering, per-cuisine reporting, and keyword search.
 
 ### ERD
 
-![ERD](erd.png)
+![ERD](erd.webp)
 
 ---
 
@@ -61,7 +61,7 @@ Customer(CustomerID PK, FirstName, LastName, Phone, Email UNIQUE, Street,
          AreaCode FK -> Area, JoinDate, IsPremium)
 MenuItem(ItemID PK, ItemName,
          Category ∈ {American, Asian, Mexican, Italian, Beverage},
-         Description, Price > 0, IsAvailable)
+         Price > 0, IsAvailable)
 DineInTable(TableID PK, Capacity > 0, Location)
 DeliveryBoy(DeliveryBoyID PK, Name, Phone, AreaCode FK UNIQUE)
 Orders(OrderID PK, CustomerID FK, OrderDate,
@@ -89,7 +89,7 @@ For most tables this is immediate. The primary key determines every other column
 |---|---|---|
 | Area | `AreaCode -> AreaName, City` | `{AreaCode}` |
 | Customer | `CustomerID -> (everything else)` | `{CustomerID}` |
-| MenuItem | `ItemID -> ItemName, Category, Description, Price, IsAvailable` | `{ItemID}` |
+| MenuItem | `ItemID -> ItemName, Category, Price, IsAvailable` | `{ItemID}` |
 | DineInTable | `TableID -> Capacity, Location` | `{TableID}` |
 | Orders | `OrderID -> CustomerID, OrderDate, OrderType, TotalAmount, Discount` | `{OrderID}` |
 
@@ -101,7 +101,7 @@ A few tables carry a second candidate key, or a dependency worth noting:
 - **UserAccount** keys on `{Username}` as well as `{UserID}`, since `Username` is declared `UNIQUE`.
 - **OrderItem** uses the composite key `{OrderID, ItemID}`. A natural candidate dependency, `ItemID -> UnitPrice`, does not hold: `UnitPrice` records the price at the time of the order, so the same item may carry different unit prices across orders.
 
-Two cases resemble violations but are not. `AreaCode -> City` would be a transitive dependency in Customer, but Customer does not store `City` at all; it lives only in Area and is reached through the `AreaCode` foreign key. `Orders.TotalAmount` is a stored copy of `SUM(Quantity * UnitPrice) - Discount`, kept to avoid recomputing it on every read; `OrderID` still determines it, so BCNF holds, and keeping it consistent is an application-layer concern rather than a normalization one.
+Two cases resemble violations but are not. `AreaCode -> City` would be a transitive dependency in Customer, but Customer does not store `City` at all; it lives only in Area and is reached through the `AreaCode` foreign key. `Orders.TotalAmount` is a stored copy of `SUM(Quantity * UnitPrice)` (the gross line-item subtotal), kept to avoid recomputing it on every read; the discount is applied separately, with the net amount recorded in `Payment.Amount`. `OrderID` still determines `TotalAmount`, so BCNF holds, and keeping it consistent is an application-layer concern rather than a normalization one.
 
 Because every table is already in BCNF (which is stricter than 3NF), the schema is also in 3NF, 2NF, and 1NF, and no decomposition is required.
 
@@ -127,7 +127,7 @@ LEFT JOIN Orders O ON C.CustomerID = O.CustomerID
 GROUP BY C.CustomerID, C.FirstName, C.LastName, C.IsPremium;
 ```
 
-Customer-level aggregates such as `MAX`/`MIN`/`AVG` of `TotalSpent` become one-liners on top of this view. (The GUI's own stats buttons aggregate the base `Orders` and `MenuItem` tables directly, not this view.)
+Customer-level aggregates such as `MAX`/`MIN`/`AVG` of `TotalSpent` become one-liners on top of this view.
 
 ![CustomerOrderSummary](screenshots/views/customer-order-summary.png)
 
@@ -195,7 +195,7 @@ $$ LANGUAGE plpgsql;
 
 Firing on both `INSERT` and `UPDATE` means a new order that crosses $200 promotes the customer immediately. Keying the update on `NEW.CustomerID` re-checks only the customer whose order changed (rather than re-scanning every customer), and the `AND IsPremium = 'No'` guard avoids redundant writes when they are already premium. Promotion is one-way by design: cumulative lifetime spend does not decrease under normal use, so customers are never demoted.
 
-`IsPremium` has two sources. The trigger sets it automatically once a customer's lifetime spend reaches $200, and staff can also set it manually on the Customer form (for example, to comp a frequent customer or apply a promotion not tied to spend). Because the trigger only ever grants premium, it does not override a manually set flag, and a customer who reaches the threshold keeps the status even if a later order is reduced. The $200 rule is therefore an automatic floor for premium status, not the only path to it.
+`IsPremium` has two sources. The trigger sets it automatically once a customer's lifetime spend reaches $200, and staff can also set it manually (for example, to comp a frequent customer or apply a promotion not tied to spend). Because the trigger only ever grants premium, it does not override a manually set flag, and a customer who reaches the threshold keeps the status even if a later order is reduced. The $200 rule is therefore an automatic floor for premium status, not the only path to it.
 
 ### Block deletion of customers with orders — `BEFORE DELETE ON Customer`
 
@@ -294,61 +294,7 @@ The remaining five queries — premium customers, dine-in order details by custo
 
 ---
 
-## 7. GUI
-
-The application is built with Java Swing and JDBC. Three classes in total:
-
-- [`RestaurantApp`](../gui/src/RestaurantApp.java) — entry point; loads the JDBC driver and launches the login form
-- [`LoginForm`](../gui/src/LoginForm.java) — authentication window
-- [`RestaurantForm`](../gui/src/RestaurantForm.java) — main window with tabbed data views
-
-All SQL access is routed through [`DatabaseHelper`](../gui/src/DatabaseHelper.java), which exposes a small set of parameterized methods backed by `PreparedStatement` to prevent injection.
-
-### Login
-
-Authenticates against the `UserAccount` table by username and password. Each account carries a role (Admin, Staff, Manager), though the GUI does not yet gate features by role — any valid login gets full access.
-
-```sql
-SELECT 1 FROM UserAccount WHERE Username = ? AND Password = ?;
-```
-
-`SELECT 1` is used because the query only needs to know whether a matching row exists — no column values are consumed.
-
-![Login](screenshots/gui/login-page.png)
-
-### Main Window
-
-Tabbed interface across three data domains: Customers, Menu Items, and Orders.
-
-**Keyword search.** Each searchable tab has a text field that runs a case-insensitive partial match across the main text columns using `ILIKE`:
-
-```sql
-SELECT CustomerID, FirstName, LastName, Phone, Email, AreaCode, JoinDate, IsPremium, Street
-FROM Customer
-WHERE CAST(CustomerID AS TEXT) ILIKE '%' || ? || '%'
-   OR FirstName ILIKE '%' || ? || '%'
-   OR LastName  ILIKE '%' || ? || '%'
-   OR Phone     ILIKE '%' || ? || '%'
-   OR Email     ILIKE '%' || ? || '%'
-   OR AreaCode  ILIKE '%' || ? || '%'
-ORDER BY CustomerID;
-```
-
-**CRUD operations.** Add / Update / Delete dialogs for `Customer` and `MenuItem` records, with confirmation prompts and automatic `JTable` refresh after each operation. The "Auto-promote to premium" trigger and "Block deletion with existing orders" trigger both surface in the UI when they fire.
-
-**Aggregate statistics.** "Price Stats" (Menu tab) and "Order Stats" (Orders tab) buttons run `MAX` / `MIN` / `AVG` against the respective tables and display the results in a popup dialog.
-
-![Customer Tab](screenshots/gui/customer-tab.png)
-
-![Menu Items Tab](screenshots/gui/menu-items-tab.png)
-
-![Order Stats](screenshots/gui/order-stats.png)
-
-Additional GUI screenshots live in [`screenshots/gui/`](screenshots/gui/).
-
----
-
-## 8. Data Source
+## 7. Data Source
 
 Menu items (IDs 101–132) come from the [Maven Analytics Restaurant Orders dataset](https://github.com/zainhaidar16/Restaurant-Order-Analysis). Beverage items (IDs 133–138) and all other seed data were generated to exercise the schema.
 
@@ -356,16 +302,16 @@ The bundled [`sql/seed.sql`](../sql/seed.sql) populates all eleven tables with a
 
 | Table | Rows | Notes |
 |---|---|---|
-| UserAccount | 3 | Admin, Staff, Manager logins for the GUI |
+| UserAccount | 3 | Admin, Staff, Manager accounts with roles |
 | Area | 8 | Area codes 10001–10008 |
 | Customer | 15 | Mix of premium and non-premium |
 | MenuItem | 38 | 32 real items (Maven Analytics) + 6 beverages |
 | DineInTable | 8 | Various capacities and locations |
 | DeliveryBoy | 5 | Areas 10006–10008 intentionally have no driver |
-| Orders | 25 | Dine-In, Online, and Phone |
-| OrderItem | 83 | Line items linking orders to menu items |
+| Orders | 27 | Dine-In, Online, and Phone |
+| OrderItem | 96 | Line items linking orders to menu items |
 | Delivery | 10 | Online/Phone orders only |
-| Payment | 25 | One per order |
+| Payment | 27 | One per order |
 | Reservation | 8 | Various statuses |
 
-Several rows are constructed to exercise specific queries — for example, Customer 13 has no orders (for the anti-join), Customer 1 has ordered every beverage (for the relational-division query), and areas 10006–10008 have no delivery driver.
+Several rows are constructed to exercise specific queries — for example, Customer 13 has no orders (for the anti-join), Customer 1 has ordered every beverage (for the relational-division query), and areas 10006–10008 have no delivery driver. Customer 7's orders push lifetime spend past $200, so the premium-promotion trigger fires while the seed loads.
