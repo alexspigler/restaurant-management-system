@@ -56,7 +56,7 @@ psql -d restaurant_db -c "SELECT CustomerID, IsPremium FROM Customer WHERE Custo
 
 ## Design Doc
 
-For the full walkthrough — domain model, schema design, BCNF analysis, views, triggers, and sample queries — see **[docs/DESIGN.md](docs/DESIGN.md)**.
+For the full walkthrough — domain model, schema design, BCNF analysis, views, triggers, and sample queries — see [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Data Source
 
