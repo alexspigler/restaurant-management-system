@@ -15,14 +15,14 @@ The schema is 11 tables normalized to BCNF, with a per-table functional-dependen
 
 ## Entity-Relationship Diagram
 
-![ERD](docs/erd.webp)
+![ERD](docs/erd.svg)
 
 ## Repository Layout
 
 ```
 ├── docs/
 │   ├── DESIGN.md               Full design and implementation walkthrough
-│   ├── erd.webp                Entity-relationship diagram
+│   ├── erd.svg                 Entity-relationship diagram
 │   └── screenshots/
 │       └── views/              View result screenshots
 └── sql/
