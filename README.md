@@ -62,6 +62,11 @@ For the full walkthrough — domain model, schema design, BCNF analysis, views, 
 
 Menu items (IDs 101–132) come from the [Maven Analytics Restaurant Orders dataset](https://github.com/zainhaidar16/Restaurant-Order-Analysis). Beverage items (IDs 133–138) and all other table data are synthetic and generated to exercise the schema.
 
+## Contact
+
+**Alex Spigler** — Statistics & Computer Science, George Washington University  
+[LinkedIn](https://linkedin.com/in/alexspigler) · [alexspigler.dev](https://alexspigler.dev)
+
 ## License
 
 Released under the [MIT License](LICENSE).
