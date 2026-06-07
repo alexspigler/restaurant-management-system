@@ -251,7 +251,7 @@ WHERE NOT EXISTS (
 );
 ```
 
-Implements relational division via `NOT EXISTS` + `EXCEPT` — finds customers for whom the set of beverage items *not yet ordered* is empty.
+Implements relational division via `NOT EXISTS` + `EXCEPT` — finds customers for whom the set of beverage items not yet ordered is empty.
 
 ### Customers and drivers per delivery — four-way join
 
