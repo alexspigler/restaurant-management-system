@@ -47,7 +47,7 @@ Key design decisions:
 
 ### ERD
 
-![ERD](erd.webp)
+![ERD](erd.svg)
 
 ---
 
